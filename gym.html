@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>GYM.BOT</title>
+  <style>
+    :root{
+      --bg:#0f1113;           /* near-black */
+      --bg-2:#15181b;         /* panels */
+      --ink:#e7e7e7;          /* primary text */
+      --ink-2:#b9bcc1;        /* secondary text */
+      --muted:#6a6f76;        /* muted */
+      --line:#2a2e33;         /* borders */
+      --accent:#ffffff;       /* subtle white highlight */
+      --ok:#d9d9d9;           /* neutral accents in mono palette */
+      --warn:#bdbdbd;
+      --error:#9c9c9c;
+      --focus: #f5f5f5;
+      --shadow: 0 6px 20px rgba(0,0,0,.35);
+      --radius: 14px;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", Monaco, monospace;
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    }
+    /* Subtle scanline / terminal feel */
+    body::before{
+      content:""; position:fixed; inset:0; pointer-events:none;
+      background: linear-gradient(rgba(255,255,255,.03), rgba(255,255,255,0) 2px);
+      background-size: 100% 3px; mix-blend-mode: overlay; opacity:.25;
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:16px;}
+    header{
+      position:sticky; top:0; z-index:10; background:linear-gradient(180deg, rgba(15,17,19,0.96), rgba(15,17,19,0.7)); backdrop-filter: blur(6px);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar{display:flex; align-items:center; gap:12px; padding:12px 16px;}
+    .brand{font-weight:800; letter-spacing:1px;}
+    .blinker{width:10px; height:1.1em; background:var(--ink); display:inline-block; margin-left:4px; animation:blink .95s steps(1,end) infinite;}
+    @keyframes blink{50%{opacity:0}}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap; padding:8px 16px 16px;}
+    .tab{border:1px solid var(--line); padding:8px 12px; border-radius:10px; cursor:pointer; user-select:none; color:var(--ink-2); background:var(--bg-2);} 
+    .tab.active{color:var(--ink); border-color:var(--focus); box-shadow: inset 0 0 0 1px var(--focus);}
+
+    .grid{display:grid; gap:12px; grid-template-columns: repeat(12, 1fr);} 
+    .tile{grid-column: span 12; background:var(--bg-2); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);}
+    .tile h2{margin:0; padding:14px 14px 0; font-size:16px; color:var(--ink-2);}
+    .tile .body{padding:14px;}
+
+    @media(min-width:720px){
+      .span-6{grid-column: span 6}
+      .span-4{grid-column: span 4}
+      .span-8{grid-column: span 8}
+      .span-3{grid-column: span 3}
+    }
+
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .mono{font-variant-ligatures: none}
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+    .row > *{flex:1}
+
+    .btn{appearance:none; border:1px solid var(--line); color:var(--ink); background:transparent; padding:8px 10px; border-radius:10px; cursor:pointer}
+    .btn:hover{border-color:var(--focus)}
+    .btn.primary{background: var(--ink); color:var(--bg); border-color:var(--ink)}
+    .btn.ghost{background:transparent}
+    .btn.warn{border-color:var(--warn)}
+
+    .field{display:flex; flex-direction:column; gap:6px;}
+    .field label{color:var(--ink-2); font-size:12px}
+    .input, select, textarea{background:#0d0f11; border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:10px;}
+    input[type=number]{-moz-appearance: textfield}
+    input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0}
+
+    table{width:100%; border-collapse:separate; border-spacing:0;}
+    th,td{padding:10px; border-bottom:1px dashed var(--line); text-align:left}
+    th{color:var(--ink-2); font-weight:600}
+    tr:hover td{background:#101316}
+
+    .day{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{border:1px dashed var(--line); padding:6px 10px; border-radius:999px; color:var(--ink-2)}
+    .chip .x{cursor:pointer; margin-left:6px; opacity:.7}
+
+    .hint{border-left:3px solid var(--line); padding:10px 12px; background:#101316; color:var(--ink-2); border-radius:8px}
+
+    .footer{padding:22px 0; color:var(--muted); font-size:12px}
+    .right{margin-left:auto}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar wrap">
+      <div class="brand">GYM.BOT<span class="blinker"></span></div>
+      <div class="right row" style="justify-content:flex-end; gap:8px">
+        <button class="btn small" id="btnExport">Export</button>
+        <label class="btn small" for="importFile" style="display:inline-block">Import</label>
+        <input id="importFile" type="file" accept="application/json" style="display:none" />
+      </div>
+    </div>
+    <div class="tabs wrap" id="tabs">
+      <div class="tab active" data-tab="today">Today</div>
+      <div class="tab" data-tab="workouts">Workouts</div>
+      <div class="tab" data-tab="library">Exercises</div>
+      <div class="tab" data-tab="schedule">Schedule</div>
+      <div class="tab" data-tab="settings">Settings</div>
+    </div>
+  </header>
+
+  <main class="wrap" id="main"></main>
+
+  <div class="wrap footer">Mono palette • Local storage only • Single file app</div>
+
+<script>
+(function(){
+  // ---- Storage ------------------------------------------------------------
+  const LS_KEY = 'gym.term.v1';
+  const defaultData = {
+    settings: { unit: 'kg', oneRM: 'epley' },
+    exercises: [
+      // Compound
+      {id: uid(), name:'Back Squat', cat:'Lower'},
+      {id: uid(), name:'Front Squat', cat:'Lower'},
+      {id: uid(), name:'Deadlift', cat:'Lower'},
+      {id: uid(), name:'Bench Press', cat:'Upper'},
+      {id: uid(), name:'Overhead Press', cat:'Upper'},
+      {id: uid(), name:'Barbell Row', cat:'Upper'},
+      {id: uid(), name:'Pull-Up', cat:'Upper'},
+      {id: uid(), name:'Dips', cat:'Upper'},
+      // Accessories
+      {id: uid(), name:'Romanian Deadlift', cat:'Lower'},
+      {id: uid(), name:'Lunge', cat:'Lower'},
+      {id: uid(), name:'Leg Press', cat:'Lower'},
+      {id: uid(), name:'Incline DB Press', cat:'Upper'},
+      {id: uid(), name:'Lat Pulldown', cat:'Upper'},
+      {id: uid(), name:'Seated Row', cat:'Upper'},
+      {id: uid(), name:'Bicep Curl', cat:'Arms'},
+      {id: uid(), name:'Tricep Pushdown', cat:'Arms'},
+      {id: uid(), name:'Calf Raise', cat:'Lower'},
+      {id: uid(), name:'Plank', cat:'Core'}
+    ],
+    workouts: [
+      { id: uid(), name:'Push', items:[
+        // exerciseId, defaultReps, defaultWeight
+        // defaults are examples, adjust freely
+      ]},
+      { id: uid(), name:'Pull', items:[]},
+      { id: uid(), name:'Legs', items:[]}
+    ],
+    schedule: {0:[],1:[],2:[],3:[],4:[],5:[],6:[]}, // 0=Sun
+    latestByExercise: {
+      // exerciseId: {date, reps, weight}
+    }
+  };
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw){ save(defaultData); return structuredClone(defaultData); }
+      const data = JSON.parse(raw);
+      // Gentle migrations
+      if(!data.schedule) data.schedule = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
+      if(!data.settings) data.settings = {unit:'kg', oneRM:'epley'};
+      if(!data.latestByExercise) data.latestByExercise = {};
+      return data;
+    }catch(e){ console.error(e); return structuredClone(defaultData); }
+  }
+  function save(data){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+  function reset(){ localStorage.removeItem(LS_KEY); location.reload(); }
+  async function backup(){
+    const data = localStorage.getItem(LS_KEY) || JSON.stringify(defaultData);
+    const filename = 'gym.bot.backup.json';
+    // 1) Modern browsers: File System Access API (not on iOS Safari)
+    try{
+      if('showSaveFilePicker' in window){
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(new Blob([data], {type:'application/json'}));
+        await writable.close();
+        return;
+      }
+    }catch(err){ /* continue to fallbacks */ }
+
+    // 2) Anchor + Blob (append to DOM for Safari reliability)
+    try{
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener'; a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+      return;
+    }catch(err){ /* continue to next fallback */ }
+
+    // 3) Data URL fallback (more iOS-friendly). If even this is blocked, show copy prompt.
+    try{
+      const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
+      const w = window.open(url, '_blank');
+      if(!w){ throw new Error('Popup blocked'); }
+    }catch(err){
+      // 4) Last resort: prompt to copy
+      try{
+        await navigator.clipboard.writeText(data);
+        alert('Backup JSON copied to clipboard. Paste it into a file named '+filename);
+      }catch(e){
+        prompt('Copy your backup JSON manually:', data);
+      }
+    }
+  }
+  function importBackup(file){
+    const reader = new FileReader();
+    reader.onload = () => { try{ localStorage.setItem(LS_KEY, reader.result); location.reload(); }catch(e){ alert('Invalid file.'); } };
+    reader.readAsText(file);
+  }
+  function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36).slice(4); }
+
+  // ---- 1RM calculations ---------------------------------------------------
+  const oneRM = {
+    epley: (w, r) => r<=1 ? w : w * (1 + r/30),
+    brzycki: (w, r) => r>=36? w : w * (36/(37 - r)),
+    lombardi: (w, r) => w * Math.pow(r, 0.10),
+  };
+
+  // ---- State & Routing ----------------------------------------------------
+  let state = load();
+  let currentTab = 'today';
+
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  function setTab(id){ currentTab = id; $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===id)); render(); }
+
+  // ---- Renderers ----------------------------------------------------------
+  const main = $('#main');
+
+  function render(){
+    main.innerHTML = '';
+    if(currentTab==='today') return renderToday();
+    if(currentTab==='workouts') return renderWorkouts();
+    if(currentTab==='library') return renderLibrary();
+    if(currentTab==='schedule') return renderSchedule();
+    if(currentTab==='settings') return renderSettings();
+  }
+
+  function renderToday(){
+    const d = new Date();
+    const day = d.getDay(); // 0=Sun
+    const todaysIds = state.schedule[day] || [];
+    const todays = state.workouts.filter(w => todaysIds.includes(w.id));
+
+    const top = el('div', {class:'grid'}, [
+      tile('Today', el('div', {class:'body'}, [
+        el('div', {class:'row', style:'align-items:flex-end'}, [
+          el('div', {}, [
+            el('div', {class:'muted small'}, d.toDateString()),
+            el('div', {style:'font-size:22px; margin-top:4px'}, todays.length? 'Scheduled workouts' : 'No workouts scheduled'),
+          ]),
+          el('div', {class:'right'}, [
+            el('button', {class:'btn', onclick: () => setTab('schedule')}, 'Edit Schedule')
+          ])
+        ]),
+        todays.length ? el('div', {style:'margin-top:10px; display:grid; gap:8px'}, todays.map(w => 
+          el('div', {class:'row', style:'justify-content:space-between; border:1px dashed var(--line); padding:10px; border-radius:10px'}, [
+            el('div', {}, [ el('div', {style:'font-weight:700'}, w.name), el('div', {class:'small muted'}, `${w.items.length} exercises`) ]),
+            el('div', {}, [ el('button', {class:'btn primary', onclick: () => startWorkout(w.id)}, 'Start') ])
+          ])
+        )) : el('div', {class:'hint', style:'margin-top:10px'}, 'Assign workouts to days in the Schedule tab — multiple per day supported.')
+      ])),
+
+      tile('Latest 1RM (by exercise)', latestOneRMsTable())
+    ]);
+
+    main.appendChild(top);
+  }
+
+  function latestOneRMsTable(){
+    const rows = [];
+    const formula = oneRM[state.settings.oneRM] || oneRM.epley;
+    const map = state.latestByExercise;
+    Object.entries(map).forEach(([exId, lr]) => {
+      const ex = state.exercises.find(e => e.id===exId);
+      if(!ex || !lr) return;
+      const est = safe1RM(lr.weight, lr.reps, formula);
+      rows.push([ex.name, fmtWeight(est), `${lr.reps} @ ${fmtWeight(lr.weight)}`, lr.date]);
+    });
+    rows.sort((a,b)=> a[0].localeCompare(b[0]));
+
+    const table = el('div', {class:'body'}, [
+      rows.length? tableEl(['Exercise','e1RM','Last Set','Date'], rows) : el('div', {class:'hint'}, 'Log any set to see estimated 1RMs here.')
+    ]);
+    table.classList.add('tile');
+    table.querySelector('.hint')?.classList.add('body');
+    return table;
+  }
+
+  function renderWorkouts(){
+    const container = el('div', {class:'grid'});
+
+    container.appendChild(tile('Workouts', el('div', {class:'body'}, [
+      el('div', {class:'row'}, [
+        el('button', {class:'btn primary', onclick: () => createWorkout()}, 'New Workout'),
+        el('div', {class:'right muted small'}, `${state.workouts.length} total`)
+      ]),
+      state.workouts.length ?
+        tableEl(['Name','Exercises','Actions'], state.workouts.map(w => [
+          w.name,
+          String(w.items.length),
+          actionRow([
+            ['Edit', () => editWorkout(w.id)],
+            ['Start', () => startWorkout(w.id)],
+            ['Duplicate', () => dupWorkout(w.id)],
+            ['Delete', () => delWorkout(w.id)],
+          ])
+        ]))
+      : el('div', {class:'hint', style:'margin-top:10px'}, 'Create your first workout, then add exercises from the library and set default reps/weight.')
+    ])));
+
+    main.appendChild(container);
+  }
+
+  function renderLibrary(){
+    const container = el('div', {class:'grid'});
+    const byCat = groupBy(state.exercises, x => x.cat || 'Other');
+    const cats = Object.keys(byCat).sort();
+
+    container.appendChild(tile('Exercises Library', el('div', {class:'body'}, [
+      el('div', {class:'row'}, [
+        field('Exercise Name', el('input', {class:'input', id:'exName', placeholder:'e.g., Back Squat'})),
+        field('Category', el('input', {class:'input', id:'exCat', placeholder:'e.g., Lower / Upper / Arms / Core'})),
+        el('button', {class:'btn primary', onclick: addExercise}, 'Add')
+      ]),
+      el('div', {class:'small muted', style:'margin:8px 0 16px'}, 'Keep this list as your reference data. It is used when building workouts.'),
+      ...cats.map(cat => el('div', {style:'margin:12px 0'}, [
+        el('div', {class:'muted', style:'margin:6px 0 4px'}, cat),
+        tableEl(['Exercise','Actions'], byCat[cat].sort((a,b)=>a.name.localeCompare(b.name)).map(ex => [
+          ex.name,
+          actionRow([
+            ['Rename', () => renameExercise(ex.id)],
+            ['Delete', () => deleteExercise(ex.id)]
+          ])
+        ]))
+      ]))
+    ])));
+
+    main.appendChild(container);
+  }
+
+  function renderSchedule(){
+    const container = el('div', {class:'grid'});
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    container.appendChild(tile('Weekly Schedule', el('div', {class:'body'}, [
+      el('div', {class:'small muted'}, 'Assign one or more workouts to any day. These appear on the Today tab.'),
+      ...days.map((d,ix) => el('div', {style:'margin-top:10px'}, [
+        el('div', {style:'font-weight:700; margin-bottom:6px'}, d),
+        el('div', {class:'row'}, [
+          selectWorkouts(`sel-${ix}`),
+          el('button', {class:'btn', onclick: () => addToDay(ix, $(`#sel-${ix}`).value)}, 'Add to day')
+        ]),
+        el('div', {class:'day'}, (state.schedule[ix]||[]).map(id => {
+          const w = state.workouts.find(x=>x.id===id); if(!w) return el('span');
+          return el('span', {class:'chip'}, [w.name, el('span', {class:'x', title:'Remove', onclick:()=>removeFromDay(ix,id)}, '×')]);
+        }))
+      ]))
+    ])));
+
+    main.appendChild(container);
+  }
+
+  function renderSettings(){
+    const container = el('div', {class:'grid'});
+    container.appendChild(tile('Settings', el('div', {class:'body'}, [
+      el('div', {class:'row'}, [
+        field('Units', select([{v:'kg',t:'kg'},{v:'lb',t:'lb'}], state.settings.unit, (e)=>{ state.settings.unit = e.target.value; save(state); render(); })),
+        field('1RM Formula', select([
+            {v:'epley', t:'Epley (w*(1+r/30))'},
+            {v:'brzycki', t:'Brzycki (w*36/(37-r))'},
+            {v:'lombardi', t:'Lombardi (w*r^0.10)'}
+          ], state.settings.oneRM, (e)=>{ state.settings.oneRM = e.target.value; save(state); render(); }))
+      ]),
+      el('div', {class:'hint', style:'margin-top:12px'}, 'No cloud sync. Use Export/Import to move data between devices.')
+    ])));
+
+    container.appendChild(tile('Danger Zone', el('div', {class:'body'}, [
+      el('button', {class:'btn warn', onclick: ()=>{ if(confirm('Reset all data?')) reset(); }}, 'Reset App Data')
+    ])));
+
+    main.appendChild(container);
+  }
+
+  // ---- Workout CRUD -------------------------------------------------------
+  function createWorkout(){
+    const name = prompt('Workout name?');
+    if(!name) return;
+    state.workouts.push({id:uid(), name, items:[]}); save(state); render();
+  }
+  function dupWorkout(id){
+    const w = state.workouts.find(x=>x.id===id); if(!w) return;
+    const copy = JSON.parse(JSON.stringify(w)); copy.id = uid(); copy.name = w.name + ' (copy)';
+    state.workouts.push(copy); save(state); render();
+  }
+  function delWorkout(id){
+    if(!confirm('Delete workout?')) return;
+    state.workouts = state.workouts.filter(w=>w.id!==id);
+    // remove from schedule
+    Object.keys(state.schedule).forEach(k => state.schedule[k] = state.schedule[k].filter(x=>x!==id));
+    save(state); render();
+  }
+  function editWorkout(id){
+    const w = state.workouts.find(x=>x.id===id); if(!w) return;
+    const container = el('div', {class:'grid'});
+
+    container.appendChild(tile('Edit Workout', el('div', {class:'body'}, [
+      el('div', {class:'row'}, [
+        field('Name', el('input', {class:'input', value:w.name, oninput:(e)=>{ w.name=e.target.value; save(state); }})),
+        el('div', {class:'row', style:'flex:0 0 auto; gap:8px; align-items:flex-end'}, [
+          el('button', {class:'btn', onclick: ()=> setTab('workouts')}, 'Done'),
+          el('button', {class:'btn primary', onclick: ()=> startWorkout(id)}, 'Start')
+        ])
+      ]),
+      el('div', {class:'row', style:'margin-top:10px'}, [
+        selectExercise('exSel-'+id),
+        field('Default Reps', el('input', {type:'number', class:'input', id:'defReps', min:1, max:50, step:1, value:5})),
+        field(`Default Weight (${state.settings.unit})`, el('input', {type:'number', class:'input', id:'defWt', step:'0.5', value:0})),
+        el('button', {class:'btn', onclick: ()=>{
+          const exId = $(`#exSel-${id}`).value;
+          const reps = Number($('#defReps').value||0);
+          const wt = Number($('#defWt').value||0);
+          if(!exId) return alert('Pick exercise');
+          w.items.push({exerciseId:exId, defaultReps:reps, defaultWeight:wt}); save(state); editWorkout(id);
+        }}, 'Add Exercise')
+      ]),
+      w.items.length? tableEl(['Exercise','Default','e1RM (from latest)','Actions'], w.items.map((it, idx)=>{
+        const ex = state.exercises.find(e=>e.id===it.exerciseId);
+        const latest = state.latestByExercise[it.exerciseId];
+        const formula = oneRM[state.settings.oneRM] || oneRM.epley;
+        const e1 = latest? safe1RM(latest.weight, latest.reps, formula) : null;
+        return [
+          ex? ex.name : '(deleted)',
+          `${it.defaultReps} @ ${fmtWeight(it.defaultWeight)}`,
+          e1? fmtWeight(e1) : '-',
+          actionRow([
+            ['Set Latest', ()=> quickSetLatest(it.exerciseId)],
+            ['Remove', ()=>{ w.items.splice(idx,1); save(state); editWorkout(id);}]
+          ])
+        ];
+      })) : el('div', {class:'hint', style:'margin-top:10px'}, 'No exercises yet. Add from the controls above.')
+    ])));
+
+    main.innerHTML = '';
+    main.appendChild(container);
+  }
+
+  function selectExercise(id){
+    const sel = el('select', {id, class:'input'});
+    sel.appendChild(el('option', {value:''}, 'Select exercise…'));
+    state.exercises.sort((a,b)=>a.name.localeCompare(b.name)).forEach(ex =>
+      sel.appendChild(el('option', {value:ex.id}, ex.name))
+    );
+    return field('Exercise', sel);
+  }
+
+  function selectWorkouts(id){
+    const sel = el('select', {id, class:'input'});
+    state.workouts.forEach(w => sel.appendChild(el('option', {value:w.id}, w.name)));
+    return sel;
+  }
+
+  // ---- Start / Log Workout -----------------------------------------------
+  function startWorkout(id){
+    const w = state.workouts.find(x=>x.id===id); if(!w) return;
+    const container = el('div', {class:'grid'});
+
+    container.appendChild(tile(`Workout • ${w.name}`, el('div', {class:'body'}, [
+      el('div', {class:'small muted'}, 'Enter your top set (heaviest quality set). The latest entry per exercise is used for 1RM estimates.'),
+      w.items.length? tableEl(['Exercise','Set (reps @ weight)','Latest','e1RM','Actions'], w.items.map(it=>{
+        const ex = state.exercises.find(e=>e.id===it.exerciseId);
+        const latest = state.latestByExercise[it.exerciseId];
+        const repsId = 'r-'+uid();
+        const wtId = 'w-'+uid();
+        const formula = oneRM[state.settings.oneRM] || oneRM.epley;
+        const e1 = latest? safe1RM(latest.weight, latest.reps, formula) : null;
+        const defaultReps = latest? latest.reps : it.defaultReps || 5;
+        const defaultWt = latest? latest.weight : it.defaultWeight || 0;
+        return [
+          ex? ex.name : '(deleted)',
+          el('div', {class:'row', style:'gap:6px'}, [
+            el('input', {id:repsId, class:'input', type:'number', min:1, step:1, value: defaultReps}),
+            el('span', {class:'muted'}, '@'),
+            el('input', {id:wtId, class:'input', type:'number', step:'0.5', value: defaultWt}),
+            el('span', {class:'muted'}, state.settings.unit)
+          ]),
+          latest? `${latest.reps} @ ${fmtWeight(latest.weight)} (${latest.date})` : '-',
+          e1? fmtWeight(e1) : '-',
+          actionRow([
+            ['Save', ()=>{
+              const reps = Number(document.getElementById(repsId).value||0);
+              const wt = Number(document.getElementById(wtId).value||0);
+              if(!reps||!wt) return alert('Enter reps and weight');
+              state.latestByExercise[it.exerciseId] = {date: todayStr(), reps, weight: wt};
+              save(state); startWorkout(id);
+            }]
+          ])
+        ];
+      })) : el('div', {class:'hint', style:'margin-top:10px'}, 'This workout has no exercises. Add them via Edit.')
+    ])));
+
+    main.innerHTML=''; main.appendChild(container);
+  }
+
+  function quickSetLatest(exId){
+    const reps = Number(prompt('Reps?')||0);
+    const wt = Number(prompt(`Weight (${state.settings.unit})?`)||0);
+    if(!reps || !wt) return;
+    state.latestByExercise[exId] = {date: todayStr(), reps, weight: wt};
+    save(state); render();
+  }
+
+  // ---- Library ops --------------------------------------------------------
+  function addExercise(){
+    const name = $('#exName').value.trim();
+    const cat = $('#exCat').value.trim() || 'Other';
+    if(!name) return alert('Name required');
+    state.exercises.push({id:uid(), name, cat}); save(state); render();
+  }
+  function renameExercise(id){
+    const ex = state.exercises.find(e=>e.id===id); if(!ex) return;
+    const name = prompt('New name', ex.name); if(!name) return;
+    ex.name = name; save(state); render();
+  }
+  function deleteExercise(id){
+    if(!confirm('Delete exercise from library? It will remain in existing workouts until removed.')) return;
+    state.exercises = state.exercises.filter(e=>e.id!==id);
+    save(state); render();
+  }
+
+  // ---- Schedule ops -------------------------------------------------------
+  function addToDay(dayIx, workoutId){ if(!workoutId) return; state.schedule[dayIx] = state.schedule[dayIx]||[]; state.schedule[dayIx].push(workoutId); save(state); render(); }
+  function removeFromDay(dayIx, workoutId){ state.schedule[dayIx] = (state.schedule[dayIx]||[]).filter(x=>x!==workoutId); save(state); render(); }
+
+  // ---- Helpers ------------------------------------------------------------
+  function el(tag, attrs={}, children){
+    const n = document.createElement(tag);
+    if(typeof attrs==='string') { n.textContent = attrs; attrs = {}; }
+    Object.entries(attrs||{}).forEach(([k,v])=>{
+      if(k==='class') n.className = v;
+      else if(k==='style') n.setAttribute('style', v);
+      else if(k.startsWith('on')) n[k] = v;
+      else if(v!==undefined) n.setAttribute(k, v);
+    });
+    if(children!==undefined){
+      if(children instanceof Node) {
+        n.appendChild(children);
+      } else if(Array.isArray(children)) {
+        children.forEach(c => n.appendChild(c instanceof Node? c : document.createTextNode(String(c))));
+      } else {
+        n.textContent = String(children);
+      }
+    }
+    return n;
+  }
+  function tile(title, body){ const t = el('div', {class:'tile'}); t.appendChild(el('h2',{}, title)); t.appendChild(body); return t; }
+  function tableEl(headers, rows){
+    const tbl = el('table');
+    // Fix column alignment across multiple tables by pinning an "Actions" column width
+    const actionsIx = headers.findIndex(h => typeof h === 'string' && h.toLowerCase() === 'actions');
+    if(actionsIx >= 0){
+      const cg = el('colgroup');
+      headers.forEach((_,i)=>{
+        const col = i===actionsIx ? el('col', {style:'width:400px'}) : el('col');
+        cg.appendChild(col);
+      });
+      tbl.appendChild(cg);
+    }
+    const thead = el('thead'); const trh = el('tr');
+    headers.forEach((h,i) => {
+      const th = el('th',{}, h);
+      if(i===actionsIx) th.classList.add('actions');
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh); tbl.appendChild(thead);
+    const tb = el('tbody');
+    rows.forEach(r => {
+      const tr = el('tr');
+      r.forEach((c,i) => {
+        const td = el('td',{}, c instanceof Node? c : c);
+        if(i===actionsIx) td.classList.add('actions');
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    return el('div', {class:'body'}, [tbl]);
+  }
+  function field(label, input){ return el('div', {class:'field'}, [el('label',{},label), input]); }
+  function select(options, value, onchange){ const s = el('select', {class:'input'}); options.forEach(o=> s.appendChild(el('option', {value:o.v, selected: String(o.v)===String(value) ? '' : undefined}, o.t))); if(onchange) s.onchange = onchange; return s; }
+  function actionRow(items){
+  // Left-align buttons so they sit directly beneath the "Actions" header
+  const wrap = el('div', {class:'row actions', style:'gap:6px; flex-wrap:wrap; justify-content:flex-start' });
+  items.forEach(([label,fn])=> wrap.appendChild(
+    el('button', {class:'btn small', style:'flex:0 0 auto', onclick:fn}, label)
+  ));
+  return wrap;
+}
+  function groupBy(arr, fn){ return arr.reduce((a,x)=>{ const k = fn(x); (a[k]=a[k]||[]).push(x); return a; },{}); }
+  function todayStr(){ const d = new Date(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
+  function fmtWeight(w){ const unit = state.settings.unit||'kg'; const val = Number(w||0); return `${round(val)} ${unit}`; }
+  function round(n){ return Math.round(n*10)/10; }
+  function safe1RM(w,r,fn){ r = Math.max(1, Math.min(20, Number(r)||1)); w = Number(w)||0; return round(fn(w,r)); }
+
+  // ---- Events -------------------------------------------------------------
+  $('#tabs').addEventListener('click', (e)=>{ const t = e.target.closest('.tab'); if(!t) return; setTab(t.dataset.tab); });
+  $('#btnExport').addEventListener('click', backup);
+  $('#importFile').addEventListener('change', (e)=>{ const f=e.target.files?.[0]; if(f) importBackup(f); });
+
+  // initial paint
+  render();
+})();
+</script>
+</body>
+</html>
