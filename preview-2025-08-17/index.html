@@ -45,17 +45,10 @@
     @keyframes blink{50%{opacity:0}}
     .tabs{display:flex; gap:8px; flex-wrap:wrap; padding:8px 16px 16px;}
     .tab{border:1px solid var(--line); padding:8px 12px; border-radius:10px; cursor:pointer; user-select:none; color:var(--ink-2); background:var(--bg-2);} 
-    .tab.active{color:var(--ink); border-color:var(--focus); box-shadow: inset 0 0 0 1px var(--focus);}    
+    .tab.active{color:var(--ink); border-color:var(--focus); box-shadow: inset 0 0 0 1px var(--focus);}
 
     .grid{display:grid; gap:12px; grid-template-columns: repeat(12, 1fr);} 
-    .tile{
-      grid-column: span 12;
-      background:var(--bg-2);
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden; /* prevent content spilling outside on mobile */
-    }
+    .tile{grid-column: span 12; background:var(--bg-2); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden;}
     .tile h2{margin:0; padding:14px 14px 0; font-size:16px; color:var(--ink-2);}
     .tile .body{padding:14px;}
 
@@ -84,15 +77,21 @@
     input[type=number]{-moz-appearance: textfield}
     input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0}
 
-    table{width:100%; border-collapse:separate; border-spacing:0;}
+    table{border-collapse:separate; border-spacing:0;}
     th,td{padding:10px; border-bottom:1px dashed var(--line); text-align:left}
     tr:hover td{background:#101316}
 
-    /* --- Responsive table safety --- */
+    /* Horizontal scroll (prevents compression on phones) */
     .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
-    th,td{word-break:break-word;} /* allow long content to wrap instead of forcing overflow */
-    @media (max-width: 720px){
-      th.actions, td.actions{width:1%;} /* keep actions compact on small screens */
+    .table-scroll > table{
+      width: max-content;   /* allow table to grow beyond container */
+      min-width: 100%;      /* but at least fill the tile */
+      table-layout: auto;
+    }
+    .table-scroll th, .table-scroll td{
+      white-space: nowrap;   /* keep labels/values on one line */
+      word-break: normal;
+      overflow-wrap: normal;
     }
 
     .day{display:flex; gap:8px; flex-wrap:wrap}
@@ -135,7 +134,6 @@
   const defaultData = {
     settings: { unit: 'kg', oneRM: 'epley' },
     exercises: [
-      // Compound
       {id: uid(), name:'Back Squat', cat:'Lower'},
       {id: uid(), name:'Front Squat', cat:'Lower'},
       {id: uid(), name:'Deadlift', cat:'Lower'},
@@ -144,7 +142,6 @@
       {id: uid(), name:'Barbell Row', cat:'Upper'},
       {id: uid(), name:'Pull-Up', cat:'Upper'},
       {id: uid(), name:'Dips', cat:'Upper'},
-      // Accessories
       {id: uid(), name:'Romanian Deadlift', cat:'Lower'},
       {id: uid(), name:'Lunge', cat:'Lower'},
       {id: uid(), name:'Leg Press', cat:'Lower'},
@@ -157,17 +154,12 @@
       {id: uid(), name:'Plank', cat:'Core'}
     ],
     workouts: [
-      { id: uid(), name:'Push', items:[
-        // exerciseId, defaultReps, defaultWeight
-        // defaults are examples, adjust freely
-      ]},
+      { id: uid(), name:'Push', items:[]},
       { id: uid(), name:'Pull', items:[]},
       { id: uid(), name:'Legs', items:[]}
     ],
-    schedule: {0:[],1:[],2:[],3:[],4:[],5:[],6:[]}, // 0=Sun
-    latestByExercise: {
-      // exerciseId: {date, reps, weight}
-    }
+    schedule: {0:[],1:[],2:[],3:[],4:[],5:[],6:[]},
+    latestByExercise: {}
   };
 
   function load(){
@@ -175,7 +167,6 @@
       const raw = localStorage.getItem(LS_KEY);
       if(!raw){ save(defaultData); return structuredClone(defaultData); }
       const data = JSON.parse(raw);
-      // Gentle migrations
       if(!data.schedule) data.schedule = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
       if(!data.settings) data.settings = {unit:'kg', oneRM:'epley'};
       if(!data.latestByExercise) data.latestByExercise = {};
@@ -187,7 +178,6 @@
   async function backup(){
     const data = localStorage.getItem(LS_KEY) || JSON.stringify(defaultData);
     const filename = 'gym.bot.backup.json';
-    // 1) Modern browsers: File System Access API (not on iOS Safari)
     try{
       if('showSaveFilePicker' in window){
         const handle = await window.showSaveFilePicker({
@@ -199,9 +189,7 @@
         await writable.close();
         return;
       }
-    }catch(err){ /* continue to fallbacks */ }
-
-    // 2) Anchor + Blob (append to DOM for Safari reliability)
+    }catch(err){}
     try{
       const blob = new Blob([data], {type:'application/json'});
       const url = URL.createObjectURL(blob);
@@ -211,15 +199,12 @@
       a.click();
       setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
       return;
-    }catch(err){ /* continue to next fallback */ }
-
-    // 3) Data URL fallback (more iOS-friendly). If even this is blocked, show copy prompt.
+    }catch(err){}
     try{
       const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
       const w = window.open(url, '_blank');
       if(!w){ throw new Error('Popup blocked'); }
     }catch(err){
-      // 4) Last resort: prompt to copy
       try{
         await navigator.clipboard.writeText(data);
         alert('Backup JSON copied to clipboard. Paste it into a file named '+filename);
@@ -265,7 +250,7 @@
 
   function renderToday(){
     const d = new Date();
-    const day = d.getDay(); // 0=Sun
+    const day = d.getDay();
     const todaysIds = state.schedule[day] || [];
     const todays = state.workouts.filter(w => todaysIds.includes(w.id));
 
@@ -422,7 +407,6 @@
   function delWorkout(id){
     if(!confirm('Delete workout?')) return;
     state.workouts = state.workouts.filter(w=>w.id!==id);
-    // remove from schedule
     Object.keys(state.schedule).forEach(k => state.schedule[k] = state.schedule[k].filter(x=>x!==id));
     save(state); render();
   }
@@ -471,6 +455,7 @@
     main.appendChild(container);
   }
 
+  // ---- Selectors used by renderers ---------------------------------------
   function selectExercise(id){
     const sel = el('select', {id, class:'input'});
     sel.appendChild(el('option', {value:''}, 'Select exercise…'));
@@ -581,33 +566,29 @@
   }
   function tile(title, body){ const t = el('div', {class:'tile'}); t.appendChild(el('h2',{}, title)); t.appendChild(body); return t; }
 
-  // UPDATED: responsive table wrapper + flexible Actions column width
+  // Table with horizontal scroll wrapper
   function tableEl(headers, rows){
     const tbl = el('table');
 
-    // Find "Actions" column for width handling/alignment
     const actionsIx = headers.findIndex(h => typeof h === 'string' && h.toLowerCase() === 'actions');
-
     if(actionsIx >= 0){
       const cg = el('colgroup');
-      headers.forEach((_, i) => {
-        if (i === actionsIx) {
-          // Flexible width: compact on phones, reasonable on desktop
-          cg.appendChild(el('col', { style: 'width: clamp(120px, 35vw, 260px)' }));
-        } else {
-          cg.appendChild(el('col'));
-        }
+      headers.forEach((_,i)=>{
+        const col = i===actionsIx ? el('col', {style:'width:400px'}) : el('col');
+        cg.appendChild(col);
       });
       tbl.appendChild(cg);
     }
 
-    const thead = el('thead'); const trh = el('tr');
+    const thead = el('thead'); 
+    const trh = el('tr');
     headers.forEach((h,i) => {
       const th = el('th',{}, h);
       if(i===actionsIx) th.classList.add('actions');
       trh.appendChild(th);
     });
-    thead.appendChild(trh); tbl.appendChild(thead);
+    thead.appendChild(trh); 
+    tbl.appendChild(thead);
 
     const tb = el('tbody');
     rows.forEach(r => {
@@ -621,14 +602,13 @@
     });
     tbl.appendChild(tb);
 
-    // Wrap in scroll container to avoid tile overflow on very small screens
+    // Wrap so the table can scroll horizontally (prevents compression)
     return el('div', {class:'body table-scroll'}, [tbl]);
   }
 
   function field(label, input){ return el('div', {class:'field'}, [el('label',{},label), input]); }
   function select(options, value, onchange){ const s = el('select', {class:'input'}); options.forEach(o=> s.appendChild(el('option', {value:o.v, selected: String(o.v)===String(value) ? '' : undefined}, o.t))); if(onchange) s.onchange = onchange; return s; }
   function actionRow(items){
-    // Left-align buttons so they sit directly beneath the "Actions" header
     const wrap = el('div', {class:'row actions', style:'gap:6px; flex-wrap:wrap; justify-content:flex-start' });
     items.forEach(([label,fn])=> wrap.appendChild(
       el('button', {class:'btn small', style:'flex:0 0 auto', onclick:fn}, label)
@@ -640,6 +620,30 @@
   function fmtWeight(w){ const unit = state.settings.unit||'kg'; const val = Number(w||0); return `${round(val)} ${unit}`; }
   function round(n){ return Math.round(n*10)/10; }
   function safe1RM(w,r,fn){ r = Math.max(1, Math.min(20, Number(r)||1)); w = Number(w)||0; return round(fn(w,r)); }
+
+  // ---- Runtime self-tests (simple “tests”) --------------------------------
+  (function selfTests(){
+    try{
+      console.assert(typeof addExercise === 'function', 'addExercise() should exist');
+      console.assert(typeof renameExercise === 'function', 'renameExercise() should exist');
+      console.assert(typeof deleteExercise === 'function', 'deleteExercise() should exist');
+      console.assert(typeof selectExercise === 'function', 'selectExercise() should exist');
+      console.assert(typeof selectWorkouts === 'function', 'selectWorkouts() should exist');
+
+      // table wrapper contract
+      const t = tableEl(['A','B','Actions'], [['x','y', el('button',{class:'btn small'},'Go')]]);
+      console.assert(t.classList.contains('table-scroll'), 'tableEl should return a .table-scroll wrapper');
+      console.assert(t.querySelector('table'), 'tableEl wrapper must contain a table');
+
+      // selectWorkouts returns a <select> with options matching state.workouts
+      const sel = selectWorkouts('test-id');
+      console.assert(sel.tagName==='SELECT', 'selectWorkouts should return a SELECT element');
+      console.assert(sel.options.length===state.workouts.length, 'selectWorkouts options should match workouts length');
+      console.debug('GYM.BOT tests passed');
+    }catch(err){
+      console.error('GYM.BOT tests failed:', err);
+    }
+  })();
 
   // ---- Events -------------------------------------------------------------
   $('#tabs').addEventListener('click', (e)=>{ const t = e.target.closest('.tab'); if(!t) return; setTab(t.dataset.tab); });
