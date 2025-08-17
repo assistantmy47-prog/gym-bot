@@ -7,93 +7,86 @@
   <title>GYM.BOT</title>
   <style>
     :root{
-      --bg:#0f1113;           /* near-black */
-      --bg-2:#15181b;         /* panels */
-      --ink:#e7e7e7;          /* primary text */
-      --ink-2:#b9bcc1;        /* secondary text */
-      --muted:#6a6f76;        /* muted */
-      --line:#2a2e33;         /* borders */
-      --accent:#ffffff;       /* subtle white highlight */
-      --ok:#d9d9d9;           /* neutral accents in mono palette */
+      --bg:#0f1113;
+      --bg-2:#15181b;
+      --ink:#e7e7e7;
+      --ink-2:#b9bcc1;
+      --muted:#6a6f76;
+      --line:#2a2e33;
+      --accent:#ffffff;
+      --ok:#d9d9d9;
       --warn:#bdbdbd;
       --error:#9c9c9c;
-      --focus: #f5f5f5;
-      --shadow: 0 6px 20px rgba(0,0,0,.35);
-      --radius: 14px;
+      --focus:#f5f5f5;
+      --shadow:0 6px 20px rgba(0,0,0,.35);
+      --radius:14px;
     }
     html,body{height:100%}
     body{
       margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", Monaco, monospace;
-      background: var(--bg);
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+      background:var(--bg); color:var(--ink);
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
     }
-    /* Subtle scanline / terminal feel */
     body::before{
       content:""; position:fixed; inset:0; pointer-events:none;
-      background: linear-gradient(rgba(255,255,255,.03), rgba(255,255,255,0) 2px);
-      background-size: 100% 3px; mix-blend-mode: overlay; opacity:.25;
+      background:linear-gradient(rgba(255,255,255,.03), rgba(255,255,255,0) 2px);
+      background-size:100% 3px; mix-blend-mode:overlay; opacity:.25;
     }
     .wrap{max-width:1100px; margin:0 auto; padding:16px;}
     header{
-      position:sticky; top:0; z-index:10; background:linear-gradient(180deg, rgba(15,17,19,0.96), rgba(15,17,19,0.7)); backdrop-filter: blur(6px);
-      border-bottom:1px solid var(--line);
+      position:sticky; top:0; z-index:10;
+      background:linear-gradient(180deg, rgba(15,17,19,0.96), rgba(15,17,19,0.7));
+      backdrop-filter:blur(6px); border-bottom:1px solid var(--line);
     }
     .topbar{display:flex; align-items:center; gap:12px; padding:12px 16px;}
     .brand{font-weight:800; letter-spacing:1px;}
     .blinker{width:10px; height:1.1em; background:var(--ink); display:inline-block; margin-left:4px; animation:blink .95s steps(1,end) infinite;}
     @keyframes blink{50%{opacity:0}}
     .tabs{display:flex; gap:8px; flex-wrap:wrap; padding:8px 16px 16px;}
-    .tab{border:1px solid var(--line); padding:8px 12px; border-radius:10px; cursor:pointer; user-select:none; color:var(--ink-2); background:var(--bg-2);} 
-    .tab.active{color:var(--ink); border-color:var(--focus); box-shadow: inset 0 0 0 1px var(--focus);}    
+    .tab{border:1px solid var(--line); padding:8px 12px; border-radius:10px; cursor:pointer; user-select:none; color:var(--ink-2); background:var(--bg-2);}
+    .tab.active{color:var(--ink); border-color:var(--focus); box-shadow: inset 0 0 0 1px var(--focus);}
 
-    .grid{display:grid; gap:12px; grid-template-columns: repeat(12, 1fr);} 
+    .grid{display:grid; gap:12px; grid-template-columns:repeat(12,1fr);}
     .tile{
-      grid-column: span 12;
-      background:var(--bg-2);
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden; /* prevent content spilling outside on mobile */
+      grid-column:span 12; background:var(--bg-2); border:1px solid var(--line);
+      border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
     }
     .tile h2{margin:0; padding:14px 14px 0; font-size:16px; color:var(--ink-2);}
     .tile .body{padding:14px;}
 
     @media(min-width:720px){
-      .span-6{grid-column: span 6}
-      .span-4{grid-column: span 4}
-      .span-8{grid-column: span 8}
-      .span-3{grid-column: span 3}
+      .span-6{grid-column:span 6}
+      .span-4{grid-column:span 4}
+      .span-8{grid-column:span 8}
+      .span-3{grid-column:span 3}
     }
 
     .muted{color:var(--muted)}
     .small{font-size:12px}
-    .mono{font-variant-ligatures: none}
+    .mono{font-variant-ligatures:none}
     .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
     .row > *{flex:1}
 
     .btn{appearance:none; border:1px solid var(--line); color:var(--ink); background:transparent; padding:8px 10px; border-radius:10px; cursor:pointer}
     .btn:hover{border-color:var(--focus)}
-    .btn.primary{background: var(--ink); color:var(--bg); border-color:var(--ink)}
+    .btn.primary{background:var(--ink); color:var(--bg); border-color:var(--ink)}
     .btn.ghost{background:transparent}
     .btn.warn{border-color:var(--warn)}
 
     .field{display:flex; flex-direction:column; gap:6px;}
     .field label{color:var(--ink-2); font-size:12px}
     .input, select, textarea{background:#0d0f11; border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:10px;}
-    input[type=number]{-moz-appearance: textfield}
+    input[type=number]{-moz-appearance:textfield}
     input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0}
 
     table{width:100%; border-collapse:separate; border-spacing:0;}
     th,td{padding:10px; border-bottom:1px dashed var(--line); text-align:left}
     tr:hover td{background:#101316}
 
-    /* --- Responsive table safety --- */
+    /* --- Horizontal scroll for wide tables --- */
     .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
-    th,td{word-break:break-word;} /* allow long content to wrap instead of forcing overflow */
-    @media (max-width: 720px){
-      th.actions, td.actions{width:1%;} /* keep actions compact on small screens */
-    }
+    .table-scroll > table{min-width:700px; table-layout:auto;} /* force scroll instead of crush on phones */
+    th,td{white-space:nowrap; word-break:normal; overflow-wrap:normal;} /* keep content on one line */
 
     .day{display:flex; gap:8px; flex-wrap:wrap}
     .chip{border:1px dashed var(--line); padding:6px 10px; border-radius:999px; color:var(--ink-2)}
@@ -135,7 +128,6 @@
   const defaultData = {
     settings: { unit: 'kg', oneRM: 'epley' },
     exercises: [
-      // Compound
       {id: uid(), name:'Back Squat', cat:'Lower'},
       {id: uid(), name:'Front Squat', cat:'Lower'},
       {id: uid(), name:'Deadlift', cat:'Lower'},
@@ -144,7 +136,6 @@
       {id: uid(), name:'Barbell Row', cat:'Upper'},
       {id: uid(), name:'Pull-Up', cat:'Upper'},
       {id: uid(), name:'Dips', cat:'Upper'},
-      // Accessories
       {id: uid(), name:'Romanian Deadlift', cat:'Lower'},
       {id: uid(), name:'Lunge', cat:'Lower'},
       {id: uid(), name:'Leg Press', cat:'Lower'},
@@ -157,17 +148,12 @@
       {id: uid(), name:'Plank', cat:'Core'}
     ],
     workouts: [
-      { id: uid(), name:'Push', items:[
-        // exerciseId, defaultReps, defaultWeight
-        // defaults are examples, adjust freely
-      ]},
+      { id: uid(), name:'Push', items:[]},
       { id: uid(), name:'Pull', items:[]},
       { id: uid(), name:'Legs', items:[]}
     ],
-    schedule: {0:[],1:[],2:[],3:[],4:[],5:[],6:[]}, // 0=Sun
-    latestByExercise: {
-      // exerciseId: {date, reps, weight}
-    }
+    schedule: {0:[],1:[],2:[],3:[],4:[],5:[],6:[]},
+    latestByExercise: {}
   };
 
   function load(){
@@ -175,7 +161,6 @@
       const raw = localStorage.getItem(LS_KEY);
       if(!raw){ save(defaultData); return structuredClone(defaultData); }
       const data = JSON.parse(raw);
-      // Gentle migrations
       if(!data.schedule) data.schedule = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
       if(!data.settings) data.settings = {unit:'kg', oneRM:'epley'};
       if(!data.latestByExercise) data.latestByExercise = {};
@@ -187,7 +172,6 @@
   async function backup(){
     const data = localStorage.getItem(LS_KEY) || JSON.stringify(defaultData);
     const filename = 'gym.bot.backup.json';
-    // 1) Modern browsers: File System Access API (not on iOS Safari)
     try{
       if('showSaveFilePicker' in window){
         const handle = await window.showSaveFilePicker({
@@ -199,9 +183,7 @@
         await writable.close();
         return;
       }
-    }catch(err){ /* continue to fallbacks */ }
-
-    // 2) Anchor + Blob (append to DOM for Safari reliability)
+    }catch(err){}
     try{
       const blob = new Blob([data], {type:'application/json'});
       const url = URL.createObjectURL(blob);
@@ -211,15 +193,12 @@
       a.click();
       setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
       return;
-    }catch(err){ /* continue to next fallback */ }
-
-    // 3) Data URL fallback (more iOS-friendly). If even this is blocked, show copy prompt.
+    }catch(err){}
     try{
       const url = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
       const w = window.open(url, '_blank');
       if(!w){ throw new Error('Popup blocked'); }
     }catch(err){
-      // 4) Last resort: prompt to copy
       try{
         await navigator.clipboard.writeText(data);
         alert('Backup JSON copied to clipboard. Paste it into a file named '+filename);
@@ -265,7 +244,7 @@
 
   function renderToday(){
     const d = new Date();
-    const day = d.getDay(); // 0=Sun
+    const day = d.getDay();
     const todaysIds = state.schedule[day] || [];
     const todays = state.workouts.filter(w => todaysIds.includes(w.id));
 
@@ -287,7 +266,6 @@
           ])
         )) : el('div', {class:'hint', style:'margin-top:10px'}, 'Assign workouts to days in the Schedule tab — multiple per day supported.')
       ])),
-
       tile('Latest 1RM (by exercise)', latestOneRMsTable())
     ]);
 
@@ -422,7 +400,6 @@
   function delWorkout(id){
     if(!confirm('Delete workout?')) return;
     state.workouts = state.workouts.filter(w=>w.id!==id);
-    // remove from schedule
     Object.keys(state.schedule).forEach(k => state.schedule[k] = state.schedule[k].filter(x=>x!==id));
     save(state); render();
   }
@@ -536,28 +513,6 @@
     save(state); render();
   }
 
-  // ---- Library ops --------------------------------------------------------
-  function addExercise(){
-    const name = $('#exName').value.trim();
-    const cat = $('#exCat').value.trim() || 'Other';
-    if(!name) return alert('Name required');
-    state.exercises.push({id:uid(), name, cat}); save(state); render();
-  }
-  function renameExercise(id){
-    const ex = state.exercises.find(e=>e.id===id); if(!ex) return;
-    const name = prompt('New name', ex.name); if(!name) return;
-    ex.name = name; save(state); render();
-  }
-  function deleteExercise(id){
-    if(!confirm('Delete exercise from library? It will remain in existing workouts until removed.')) return;
-    state.exercises = state.exercises.filter(e=>e.id!==id);
-    save(state); render();
-  }
-
-  // ---- Schedule ops -------------------------------------------------------
-  function addToDay(dayIx, workoutId){ if(!workoutId) return; state.schedule[dayIx] = state.schedule[dayIx]||[]; state.schedule[dayIx].push(workoutId); save(state); render(); }
-  function removeFromDay(dayIx, workoutId){ state.schedule[dayIx] = (state.schedule[dayIx]||[]).filter(x=>x!==workoutId); save(state); render(); }
-
   // ---- Helpers ------------------------------------------------------------
   function el(tag, attrs={}, children){
     const n = document.createElement(tag);
@@ -581,25 +536,11 @@
   }
   function tile(title, body){ const t = el('div', {class:'tile'}); t.appendChild(el('h2',{}, title)); t.appendChild(body); return t; }
 
-  // UPDATED: responsive table wrapper + flexible Actions column width
+  // Responsive table wrapper; no hard column widths
   function tableEl(headers, rows){
     const tbl = el('table');
 
-    // Find "Actions" column for width handling/alignment
     const actionsIx = headers.findIndex(h => typeof h === 'string' && h.toLowerCase() === 'actions');
-
-    if(actionsIx >= 0){
-      const cg = el('colgroup');
-      headers.forEach((_, i) => {
-        if (i === actionsIx) {
-          // Flexible width: compact on phones, reasonable on desktop
-          cg.appendChild(el('col', { style: 'width: clamp(120px, 35vw, 260px)' }));
-        } else {
-          cg.appendChild(el('col'));
-        }
-      });
-      tbl.appendChild(cg);
-    }
 
     const thead = el('thead'); const trh = el('tr');
     headers.forEach((h,i) => {
@@ -614,41 +555,4 @@
       const tr = el('tr');
       r.forEach((c,i) => {
         const td = el('td',{}, c instanceof Node? c : c);
-        if(i===actionsIx) td.classList.add('actions');
-        tr.appendChild(td);
-      });
-      tb.appendChild(tr);
-    });
-    tbl.appendChild(tb);
-
-    // Wrap in scroll container to avoid tile overflow on very small screens
-    return el('div', {class:'body table-scroll'}, [tbl]);
-  }
-
-  function field(label, input){ return el('div', {class:'field'}, [el('label',{},label), input]); }
-  function select(options, value, onchange){ const s = el('select', {class:'input'}); options.forEach(o=> s.appendChild(el('option', {value:o.v, selected: String(o.v)===String(value) ? '' : undefined}, o.t))); if(onchange) s.onchange = onchange; return s; }
-  function actionRow(items){
-    // Left-align buttons so they sit directly beneath the "Actions" header
-    const wrap = el('div', {class:'row actions', style:'gap:6px; flex-wrap:wrap; justify-content:flex-start' });
-    items.forEach(([label,fn])=> wrap.appendChild(
-      el('button', {class:'btn small', style:'flex:0 0 auto', onclick:fn}, label)
-    ));
-    return wrap;
-  }
-  function groupBy(arr, fn){ return arr.reduce((a,x)=>{ const k = fn(x); (a[k]=a[k]||[]).push(x); return a; },{}); }
-  function todayStr(){ const d = new Date(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
-  function fmtWeight(w){ const unit = state.settings.unit||'kg'; const val = Number(w||0); return `${round(val)} ${unit}`; }
-  function round(n){ return Math.round(n*10)/10; }
-  function safe1RM(w,r,fn){ r = Math.max(1, Math.min(20, Number(r)||1)); w = Number(w)||0; return round(fn(w,r)); }
-
-  // ---- Events -------------------------------------------------------------
-  $('#tabs').addEventListener('click', (e)=>{ const t = e.target.closest('.tab'); if(!t) return; setTab(t.dataset.tab); });
-  $('#btnExport').addEventListener('click', backup);
-  $('#importFile').addEventListener('change', (e)=>{ const f=e.target.files?.[0]; if(f) importBackup(f); });
-
-  // initial paint
-  render();
-})();
-</script>
-</body>
-</html>
+        if(i===actionsIx)
