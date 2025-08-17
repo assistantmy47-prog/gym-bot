@@ -90,9 +90,6 @@
 
     .footer{padding:22px 0; color:var(--muted); font-size:12px}
     .right{margin-left:auto}
-    @media (max-width: 720px){
-    .tile .body{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    }
   </style>
 </head>
 <body>
@@ -496,9 +493,9 @@
           ex? ex.name : '(deleted)',
           el('div', {class:'row', style:'gap:6px'}, [
             el('input', {id:repsId, class:'input', type:'number', min:1, step:1, value: defaultReps}),
-            el('span', {class:'muted', style:'flex:0 0 auto'}, '@'),
+            el('span', {class:'muted'}, '@'),
             el('input', {id:wtId, class:'input', type:'number', step:'0.5', value: defaultWt}),
-            el('span', {class:'muted', style:'flex:0 0 auto'}, state.settings.unit)
+            el('span', {class:'muted'}, state.settings.unit)
           ]),
           latest? `${latest.reps} @ ${fmtWeight(latest.weight)} (${latest.date})` : '-',
           e1? fmtWeight(e1) : '-',
@@ -577,7 +574,7 @@
     if(actionsIx >= 0){
       const cg = el('colgroup');
       headers.forEach((_,i)=>{
-        const col = i===actionsIx ?const col = i===actionsIx ? el('col', {style:'width:clamp(160px,38vw,400px)'}) : el('col'); el('col', {style:'width:400px'}) : el('col');
+        const col = i===actionsIx ? el('col', {style:'width:400px'}) : el('col');
         cg.appendChild(col);
       });
       tbl.appendChild(cg);
